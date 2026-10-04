@@ -27,7 +27,12 @@
 *::before,
 *::after{ box-sizing:border-box; }
 
-html{ scroll-behavior:smooth; }
+html{
+  scroll-behavior:smooth;
+  overflow-x:hidden;
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+}
 
 body{
   margin:0;
@@ -36,13 +41,19 @@ body{
   line-height:1.5;
   color:var(--ink);
   background:var(--bg);
-  overflow-x:hidden;
+  /* clip, а не hidden: hidden создаёт скролл-контейнер и ломает position:sticky у хедера */
+  overflow-x:clip;
+  -webkit-tap-highlight-color:rgba(20,20,20,.08);
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
 }
 
-img{ max-width:100%; display:block; }
+img{ max-width:100%; height:auto; display:block; }
 a{ color:inherit; text-decoration:none; }
+
+/* Якоря не прячутся под фиксированной панелью / закреплённым хедером */
+section[id],
+main[id]{ scroll-margin-top:96px; }
 button{ font-family:inherit; }
 
 .container{
@@ -151,6 +162,9 @@ button{ font-family:inherit; }
 .nav a:hover{ color:var(--ink); }
 
 .header__cta{ margin-left:auto; }
+
+/* CTA внутри мобильного меню — виден только на узких экранах */
+.nav__cta{ display:none; }
 
 .nav-toggle{
   display:none;
@@ -617,11 +631,31 @@ button{ font-family:inherit; }
   .hero{ display:block; min-height:auto; }
   .hero__grid{ grid-template-columns:1fr; gap:16px; }
   .hero__visual{ min-height:460px; margin-top:16px; }
+  .hero__robot{ max-width:min(620px, 100%); }
   .hero__rings{ width:min(560px, 100%); }
   .hero__subtitle{ max-width:640px; }
 }
 
 @media (max-width:900px){
+  /* Хедер теперь всегда на экране — делаем его чуть ниже, чтобы не съедал место.
+     От --header-h зависят и выпадающее меню (top), и отступ якорей (scroll-margin-top) */
+  :root{ --header-h: 84px; }
+
+  /* --- Хедер закреплён сверху: лого и бургер всегда на экране --- */
+  .site-header{
+    position:sticky;
+    top:0;
+    background:var(--bg);
+  }
+  .site-header.is-scrolled{
+    background:rgba(238,240,242,.97);
+    box-shadow:0 1px 0 rgba(20,20,20,.06), 0 14px 30px -22px rgba(0,0,0,.55);
+  }
+
+  /* Якоря не прячутся под закреплённым хедером */
+  section[id],
+  main[id]{ scroll-margin-top:calc(var(--header-h) + 20px); }
+
   .header__inner{ gap:16px; }
 
   .nav{
@@ -629,6 +663,9 @@ button{ font-family:inherit; }
     left:0;
     right:0;
     top:var(--header-h);
+    max-height:calc(100vh - var(--header-h) - 10px);
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
     flex-direction:column;
     align-items:flex-start;
     gap:2px;
@@ -642,42 +679,50 @@ button{ font-family:inherit; }
     transition:opacity .2s ease, transform .2s ease;
   }
   .nav.is-open{ opacity:1; transform:none; pointer-events:auto; }
-  .nav a{ width:100%; padding:11px 0; font-size:16px; }
+  .nav a{ width:100%; padding:12px 0; font-size:16px; }
 
   .logo{ margin-right:auto; }
-  .nav-toggle{ display:inline-flex; }
+  .nav-toggle{ display:inline-flex; padding:11px; margin-right:-3px; }
   .header__cta{ margin-left:0; }
 
-  .float-nav{
-    left:12px;
-    right:12px;
-    max-width:none;
-    gap:10px;
-    padding:7px 8px 7px 10px;
-    transform:translateY(-150%);
-  }
-  .float-nav.is-visible{ transform:none; }
-  .float-nav__divider{ display:none; }
-  .float-nav__links{
-    flex:1 1 auto;
-    min-width:0;
-    gap:18px;
-    overflow-x:auto;
-    scrollbar-width:none;
-  }
-  .float-nav__links::-webkit-scrollbar{ display:none; }
-  .float-nav .float-nav__cta{ padding:10px 16px; font-size:11px; }
+  /* Появляющаяся плавающая панель на мобильных отключена:
+     её роль выполняет закреплённый хедер с бургер-меню (см. выше) */
+  .float-nav{ display:none; }
 }
 
 @media (max-width:640px){
   :root{ --header-h: 80px; }
+
+  /* На телефоне CTA переезжает из хедера в выпадающее меню */
+  .header__cta{ display:none; }
+  .nav a.nav__cta{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    margin-top:14px;
+    padding:15px 26px;
+    border-radius:999px;
+    background:linear-gradient(180deg, var(--orange-light), var(--orange));
+    color:var(--white);
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    box-shadow:var(--shadow-orange);
+  }
   .container{ padding:0 18px; }
-  .hero{ padding:28px 0 64px; }
-  .hero__actions{ gap:16px; margin-top:28px; }
+  .hero{ padding:28px 0 0; }
+  .hero__actions{ gap:16px; margin-top:28px; justify-content: center;}
   .btn--primary{ padding:19px 30px; font-size:13.5px; }
   .btn--dark{ padding:15px 20px; font-size:12px; }
   .hero__visual{ min-height:380px; }
-  .hero__robot{ max-width:380px; }
+  .hero__title span{ white-space:normal; }
+  .hero__subtitle br{ display:none; }
+  .hero__robot{
+    max-width:min(380px, 88%);
+    filter:drop-shadow(0 22px 26px rgba(20,20,20,.14));
+  }
   .hero__rings{ width:min(420px, 100%); }
   .float-card{ padding:10px 12px; font-size:11.5px; gap:9px; }
   .float-card__icon{ width:32px; height:32px; border-radius:9px; }
@@ -690,11 +735,52 @@ button{ font-family:inherit; }
   .problem-card{ padding:22px 22px 26px; border-radius:20px; }
   .problem-card__icon{ width:54px; height:54px; margin:16px 0 20px; border-radius:16px; }
   .problem-card__icon svg{ width:28px; height:28px; }
-  .problem__cta .btn--primary{ white-space:normal; max-width:100%; text-align:center; }
+  .problem__cta .btn--primary{
+    white-space:normal;
+    max-width:100%;
+    text-align:center;
+    line-height:1.28;
+    border-radius:26px;
+    padding:18px 26px;
+  }
+}
 
-  .float-nav{ top:10px; }
-  .float-nav__links{ gap:14px; }
-  .float-nav__links a{ font-size:13px; }
+/* ============== Очень узкие телефоны (до 420px) ======================== */
+@media (max-width:420px){
+  .hero__title{ font-size:clamp(30px, 9.6vw, 36px); text-align: center;}
+  .hero__subtitle{ text-align: center;}
+  .hero__visual{ min-height:340px; }
+  .hero__robot{ max-width:min(300px, 86%); }
+  .hero__glow { display: none;}
+  .hero__content { display: flex; flex-direction: column; align-items: center;}
+  .problem-card__text {
+    text-align: center;
+  }
+  .float-card{ padding:9px 11px; font-size:11px; gap:8px; }
+  .float-card__icon{ width:28px; height:28px; border-radius:8px; }
+  .float-card__icon svg{ width:15px; height:15px; }
+
+  .problem__title{ font-size:clamp(24px, 7.3vw, 30px); text-align: center;}
+  .problem-card__title {
+    text-align: center;
+  }
+  .problem-card{ 
+    padding:20px 18px 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .problem-card__icon{ width:50px; height:50px; }
+  .problem-card__icon svg{ width:26px; height:26px; }
+}
+
+/* ====== Тач-устройства: без «залипающих» hover-эффектов ================ */
+@media (hover:none){
+  .btn--dark:hover,
+  .btn--primary:hover,
+  .problem-card:hover{ transform:none; }
+  .btn--dark:hover .arrow,
+  .btn--primary:hover .arrow{ transform:none; }
 }
 
 @media (prefers-reduced-motion: reduce){

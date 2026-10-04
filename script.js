@@ -50,13 +50,16 @@
     if (floatNav) {
       var hero = document.querySelector('.hero');
       var trigger = 0;
+      var enabled = true;
 
       var computeTrigger = function () {
+        /* на мобильных панель скрыта (там закреплённый хедер с бургер-меню) */
+        enabled = window.getComputedStyle(floatNav).display !== 'none';
         trigger = hero ? (hero.offsetTop + hero.offsetHeight - 40) : window.innerHeight;
       };
 
       var updateFloatNav = function () {
-        floatNav.classList.toggle('is-visible', window.scrollY > trigger);
+        floatNav.classList.toggle('is-visible', enabled && window.scrollY > trigger);
       };
 
       computeTrigger();
